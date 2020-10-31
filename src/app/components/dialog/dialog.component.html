@@ -1,0 +1,19 @@
+<h2 mat-dialog-title>
+    <mat-icon *ngIf="dialogType=='progressDialog'">info</mat-icon>{{headerText}}
+</h2>
+<!-- Progress dialog -->
+<mat-dialog-content *ngIf="dialogType=='progressDialog'">
+    <mat-grid-list cols="4" rowHeight="40px">
+        <mat-grid-tile colspan="4" rowspan="2">
+            <img id="gifloadingImage" [src]="spinnerGif" style="width: 30%;height: 130%;" />
+        </mat-grid-tile>
+    </mat-grid-list>
+    <p class="text-center mat-display-1">{{description}}</p>
+</mat-dialog-content>
+<!-- Custom message dialog -->
+<mat-dialog-content *ngIf="dialogType=='customDialog'">
+    <p class="mat-body">{{description}}</p>
+</mat-dialog-content>
+<div mat-dialog-actions class="btn-div-padding" align="center" *ngIf="dialogType=='customDialog'">
+    <button color="primary" mat-raised-button mat-dialog-close>Close</button>
+</div>

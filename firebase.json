@@ -1,0 +1,19 @@
+{
+  "hosting": [
+    {
+      "target": "bill-generator",
+      "public": "dist/bill-generator",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    }
+  ]
+}
