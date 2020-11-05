@@ -20,6 +20,7 @@ import { MatSortModule } from '@angular/material/sort';
 import { MatCheckboxModule, MatDatepickerModule, MatDialogModule, MatGridListModule, MatIconModule, MatNativeDateModule, MatTooltipModule, MAT_DIALOG_DEFAULT_OPTIONS } from '@angular/material';
 import { DialogComponent } from './components/dialog/dialog.component';
 import { HttpClientModule } from '@angular/common/http';
+import { MatMomentDateModule } from '@angular/material-moment-adapter';
 
 @NgModule({
   declarations: [
@@ -50,7 +51,8 @@ import { HttpClientModule } from '@angular/common/http';
     MatTooltipModule,
     MatCheckboxModule,
     FormsModule,
-    HttpClientModule
+    HttpClientModule,
+    MatMomentDateModule,
   ],
   providers: [{ provide: MAT_DIALOG_DEFAULT_OPTIONS, useValue: { hasBackdrop: false } }],
   bootstrap: [AppComponent],

@@ -1,4 +1,4 @@
-<form [formGroup]="billForm" novalidate (ngSubmit)="onSubmit()">
+<form [formGroup]="billForm">
   <mat-card class="shipping-card">
     <mat-card-header style="display: flex;justify-content: center;">
       <mat-card-title>Billing Information</mat-card-title>
@@ -10,7 +10,7 @@
           <mat-form-field class="full-width">
             <mat-label>Bill Type</mat-label>
             <mat-select formControlName="billType" (selectionChange)="onSelectBillType()">
-              <mat-option *ngFor="let item of billType" [value]="item.id">
+              <mat-option *ngFor="let item of billType" [value]="item">
                 {{item.type}}
               </mat-option>
             </mat-select>
@@ -126,8 +126,6 @@
         </div>
       </div>
     </mat-card-content>
-
-
   </mat-card>
 </form>
 <div *ngIf="showTable">
@@ -180,6 +178,6 @@
 <mat-paginator #paginatorRef [ngClass]="{'hiddenPaginator':!showTable}" [pageSize]="3" showFirstLastButtons>
 </mat-paginator>
 <div style="display: flex;justify-content: center;">
-  <button mat-raised-button color="primary" *ngIf="displayOtherFields" [disabled]="billForm.invalid"
-    type="submit">Submit</button>
+  <button mat-raised-button color="primary" *ngIf="displayOtherFields"
+    [disabled]="billForm.invalid||selection.selected.length==0" type="submit" (click)="onSubmit()">Submit</button>
 </div>

@@ -2,17 +2,30 @@ import { SelectionModel } from '@angular/cdk/collections';
 import { Component, ViewChild } from '@angular/core';
 import { AngularFirestore } from '@angular/fire/firestore';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatDialog, MatPaginator, MatTableDataSource } from '@angular/material';
+import { DateAdapter, MatDialog, MatPaginator, MatTableDataSource, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material';
 import { DialogComponent } from '../dialog/dialog.component';
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { HttpClient } from '@angular/common/http';
+import { MomentDateAdapter } from '@angular/material-moment-adapter';
+import * as moment from 'moment';
 pdfMake.vfs = pdfFonts.pdfMake.vfs;
-
+export const MY_FORMATS = {
+  parse: {
+    dateInput: 'LL',
+  },
+  display: {
+    dateInput: 'YYYY-MM-DD',
+    monthYearLabel: 'YYYY',
+    dateA11yLabel: 'LL',
+    monthYearA11yLabel: 'YYYY',
+  },
+};
 @Component({
   selector: 'app-bill-input',
   templateUrl: './bill-input.component.html',
-  styleUrls: ['./bill-input.component.css']
+  styleUrls: ['./bill-input.component.css'],
+  providers: [{ provide: DateAdapter, useClass: MomentDateAdapter, deps: [MAT_DATE_LOCALE] }, { provide: MAT_DATE_FORMATS, useValue: MY_FORMATS },]
 })
 export class BillInputComponent {
   displayOtherFields = false;
@@ -26,12 +39,14 @@ export class BillInputComponent {
   public selection = new SelectionModel<any>(true, []);
   @ViewChild(MatPaginator, { static: true }) paginator: MatPaginator;
   baseUrl: any;
+  currentDate: any;
 
   constructor(private fb: FormBuilder, private firestore: AngularFirestore, private dialog: MatDialog, private formBuilder: FormBuilder, private http: HttpClient) {
+    this.currentDate = new Date()
     this.billForm = this.fb.group({
       billType: null,
       invoiceNo: [{ value: null, disabled: true }],
-      invoiceDate: new Date(),
+      invoiceDate: [{ value: moment().format('YYYY-MM-DD'), disabled: true }],
       name: null,
       mobileNo: [null, Validators.pattern("^((\\+91-?)|0)?[0-9]{10}$")],
       deliveryNote: null,
@@ -48,6 +63,8 @@ export class BillInputComponent {
       serialNo: null
     });
 
+
+
     firestore.collection('generated-invoices').valueChanges().subscribe(data => {
       console.log(data.length)
       this.invoiceCount = data.length + 1;
@@ -59,45 +76,56 @@ export class BillInputComponent {
         const reader = new FileReader();
         reader.onloadend = () => {
           var base64data = reader.result;
-          // console.log(base64data);
           this.baseUrl = base64data;
         }
 
         reader.readAsDataURL(res);
-        // console.log(res);
-        // this.baseUrl = res;
-        // console.log(this.baseUrl);
       });
 
 
   }
 
 
-  onSelectBillType() {
+  public onSelectBillType() {
     this.displayOtherFields = true;
-    this.fetchProducts();
+    console.log(this.billForm.value.billType.id)
+    this.fetchProducts(this.billForm.value.billType.id);
   }
 
-  onSubmit() {
-    // let flag = false;
-    // console.log(this.selection.selected)
-    // for (let item of this.selection.selected) {
-    //   if (item.selectedQuantity == null) {
-    //     this.showCustomDialog('Please enter quantity for ' + item.description);
-    //     flag = true;
-    //     break;
-    //   }
-    // }
-    // if (!flag) {
-    //   this.open();
-    // }
-    this.open();
+  public onSubmit() {
+    let cloned: any = {};
+    cloned = Object.assign({}, this.billForm.getRawValue());
+    for (let obj in cloned) {
+      if (cloned[obj] == null) {
+        cloned[obj] = ' '
+      }
+      if (obj == 'termsOfDeliveryDate' || obj == 'dispatchDocumentNoDated') {
+        if (cloned[obj] != ' ') {
+          cloned[obj] = cloned[obj].format('YYYY-MM-DD');
+        }
+      }
+    }
+    console.log(cloned)
+
+    let flag = false;
+    console.log(this.selection.selected)
+    for (let item of this.selection.selected) {
+      if (item.selectedQuantity == null) {
+        this.showCustomDialog('Please enter quantity for ' + item.description);
+        flag = true;
+        break;
+      }
+    }
+    if (!flag) {
+      this.open(cloned);
+    }
+    // this.open(cloned);
 
   }
 
-  fetchProducts() {
+  fetchProducts(id) {
     let progressDialogRef = this.openProgressDialog();
-    this.firestore.collection('products', ref => ref.where('category', '==', 1)).valueChanges().subscribe(data => {
+    this.firestore.collection('products', ref => ref.where('category', '==', id)).valueChanges().subscribe(data => {
       progressDialogRef.close();
       console.log(data);
       this.productList = data;
@@ -133,7 +161,7 @@ export class BillInputComponent {
     })
   }
 
-  public open() {
+  public open(data) {
     let docDefinition = {
       content: [
         //Image
@@ -143,16 +171,6 @@ export class BillInputComponent {
           width: 525,
           height: 100,
         },
-        // {
-        //   style: 'tableExample',
-        //   table: {
-        //     widths: [515],
-        //     heights: [100],
-        //     body: [
-        //       [{ image: this.baseUrl }]
-        //     ]
-        //   }
-        // },
         //Invoice
         {
           style: 'tableExample',
@@ -170,8 +188,8 @@ export class BillInputComponent {
             widths: [275, 110, 112],
             body: [
               ['Made For Laptop & Mobile.\n Shop NO.4,Shastri Nagar,Near City\nHospital, Paud Road,Kothrud\nPune,Maharashtra\n411038\nMob.7447233814/8801776688',
-                'Invoice:-\n1\n\nDelivery Note:-\n1\n\nSuppliers Ref:-\n1',
-                'Date:-\n21/09/2020\n\nTerms of Payment:-\nCash\n\nOther Reference(s):-\n1']
+                'Invoice:-\n' + data.invoiceNo + '\n\nDelivery Note:-\n' + data.deliveryNote + '\n\nSuppliers Ref:-\n' + data.supplierRef,
+                'Date:-\n' + data.invoiceDate + '\n\nTerms of Payment:-\nCash\n\nOther Reference(s):-\n' + data.otherRef]
 
             ]
           }
@@ -181,9 +199,9 @@ export class BillInputComponent {
           table: {
             widths: [275, 110, 112],
             body: [
-              ['Consignee:\nName:\nTest\n\nMobile Number:\n111\n\nType of Bill:\nLaptop',
-                'Terms of Delivery:-\nABC\n\nDispatch Document No:-\n111\n\nDispatched Through:-\n111',
-                'Dated:-\n111\n\nDated:-\n111\n\nDestination:-\nPune\n\nTerms of Delivery Hand Del:-\n111']
+              ['Consignee:\nName:\n' + data.name + '\n\nMobile Number:\n' + data.mobileNo + '\n\nType of Bill:\n' + data.billType.type,
+              'Terms of Delivery:-\n' + data.termsOfDelivery + '\n\nDispatch Document No:-\n' + data.dispatchDocumentNo + '\n\nDispatched Through:-\n' + data.dispatchedThrough,
+              'Dated:-\n' + data.termsOfDeliveryDate + '\n\nDated:-\n' + data.dispatchDocumentNoDated + '\n\nDestination:-\n' + data.destination + '\n\nTerms of Delivery Hand Del:-\n' + data.termsofDeliveryHandDel]
             ]
           }
         },
