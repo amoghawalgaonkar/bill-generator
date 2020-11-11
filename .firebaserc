@@ -1,0 +1,11 @@
+{
+  "targets": {
+    "bill-generator-851f1": {
+      "hosting": {
+        "bill-generator": [
+          "bill-generator-851f1"
+        ]
+      }
+    }
+  }
+}
